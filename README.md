@@ -1,5 +1,21 @@
 # recipe_web_app
 
+# To start
+
+- clone this repository:
+
+```
+git clone https://github.com/B10715018/recipe_web_app.git
+```
+
+## To install Go Dependency
+
+- execute following command:
+
+```
+go mod download
+```
+
 ## Important Notes
 
 - Alternatives for testing without Postman by using cURL:
