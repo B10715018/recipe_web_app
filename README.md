@@ -59,3 +59,9 @@ curl -s -X GET 'http://localhost:8080/recipes' | jq length
 ```
 
 -
+
+- To test the DELETE endpoint without postman, use terminal command:
+
+```
+curl -v -sX DELETE http://localhost:8080/recipes/{recipeId} | jq -r
+```
