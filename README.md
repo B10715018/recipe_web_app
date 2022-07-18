@@ -65,3 +65,50 @@ curl -s -X GET 'http://localhost:8080/recipes' | jq length
 ```
 curl -v -sX DELETE http://localhost:8080/recipes/{recipeId} | jq -r
 ```
+
+## API Documentation
+
+- Use OpenAPI Specification to generate the describe the specification of our API
+
+- We need to create the comment in the `main.go` file that mnatches the swagger metadata syntax likewise:
+
+```
+// Recipes API
+//
+// This is a sample recipes API. You can find out more about the API at https://github.com/PacktPublishing/Building-Distributed-Applications-in-Gin.
+//
+//  Schemes: http
+//  Host: localhost:8080
+//  BasePath: /
+//  Version: 1.0.0
+//  Contact: Brandon<brandon.wymer@rocketmail.com>
+//
+//  Consumes:
+//  - application/json
+//
+//  Produces:
+//  - application/json
+// swagger:meta
+```
+
+- These comments include things such as the API's description, version, base URL, and so on. There are more fields that you can include (a full list is available at https://goswagger.io/use/spec/meta.html).
+
+- To generate the swagger json file execute:
+
+```
+swagger generate spec -o swagger.json
+```
+
+- To deploy the swagger ui execute:
+
+```
+swagger serve ./swagger.json
+```
+
+- If you're a fan of the Swagger UI, you can set the flavor flag to swagger with the following command:
+
+```
+swagger serve -F swagger ./swagger.json
+```
+
+- After `swagger: metadata` we need to define the `swagger:operation`. You can find all the properties at https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#operationObject.
