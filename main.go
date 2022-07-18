@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -33,11 +35,23 @@ func NewRecipeHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, recipe)
 }
 
+// c input is representing variable c which hold context of gin
+func ListRecipeHandler(c *gin.Context) {
+	c.JSON(http.StatusOK, recipes)
+}
+
 func init() {
+	// make function is used to initialize object of type slice
 	recipes = make([]Recipe, 0)
+	file, _ := ioutil.ReadFile("recipes.json")
+	_ = json.Unmarshal([]byte(file), &recipes)
 }
 func main() {
+	// initialize the router
 	router := gin.Default()
+
 	router.POST("/recipes", NewRecipeHandler)
+	router.GET("/recipes", ListRecipeHandler)
+	// run the web application, can specify port too here
 	router.Run()
 }

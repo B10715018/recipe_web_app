@@ -42,3 +42,10 @@ curl --location --request POST 'http://localhost:8080/recipes' \
 
 Extra Note:
 The jq utility https://stedolan.github.io/jq/ is used to format the response body in JSON format. It's a powerful command-line JSON processor.
+
+- For testing the GET command for Recipes Web Application
+
+```
+curl -s --location --request GET 'http://localhost:8080/recipes' \
+--header 'Content-Type: application/json'
+```
