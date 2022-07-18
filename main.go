@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -93,6 +94,24 @@ func DeleteRecipeHandler(c *gin.Context) {
 	})
 }
 
+// search recipe handler
+func SearchRecipeHandler(c *gin.Context) {
+	tag := c.Query("tag")
+	listOfRecipes := make([]Recipe, 0)
+	for i := 0; i < len(recipes); i++ {
+		found := false
+		for _, t := range recipes[i].Tags {
+			if strings.EqualFold(t, tag) {
+				found = true
+			}
+		}
+		if found {
+			listOfRecipes = append(listOfRecipes, recipes[i])
+		}
+	}
+	c.JSON(http.StatusOK, listOfRecipes)
+}
+
 // populate mock data into inconsistent data
 func init() {
 	// make function is used to initialize object of type slice
@@ -100,6 +119,7 @@ func init() {
 	file, _ := ioutil.ReadFile("recipes.json")
 	_ = json.Unmarshal([]byte(file), &recipes)
 }
+
 func main() {
 	// initialize the router
 	router := gin.Default()
@@ -107,6 +127,7 @@ func main() {
 	router.DELETE("recipes/:id", DeleteRecipeHandler)
 	router.POST("/recipes", NewRecipeHandler)
 	router.GET("/recipes", ListRecipeHandler)
+	router.GET("/recipes/search", SearchRecipeHandler)
 	router.PUT("/recipes/:id", UpdateRecipeHandler)
 	// run the web application, can specify port too here
 	router.Run()
