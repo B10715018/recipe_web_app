@@ -40,6 +40,37 @@ func ListRecipeHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, recipes)
 }
 
+// handler to update the recipes
+func UpdateRecipeHandler(c *gin.Context) {
+	id := c.Param("id")
+	var recipe Recipe
+	// if cannot bind the data from context then error
+	if err := c.ShouldBindJSON(&recipe); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	index := -1
+	for i := 0; i < len(recipes); i++ {
+		if recipes[i].ID == id {
+			index = i
+		}
+	}
+
+	if index == -1 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Recipe Not Found",
+		})
+		return
+	}
+
+	recipe.ID = id
+	recipes[index] = recipe
+	c.JSON(http.StatusOK, recipe)
+}
+
+// populate mock data into inconsistent data
 func init() {
 	// make function is used to initialize object of type slice
 	recipes = make([]Recipe, 0)
@@ -52,6 +83,7 @@ func main() {
 
 	router.POST("/recipes", NewRecipeHandler)
 	router.GET("/recipes", ListRecipeHandler)
+	router.PUT("/recipes/:id", UpdateRecipeHandler)
 	// run the web application, can specify port too here
 	router.Run()
 }

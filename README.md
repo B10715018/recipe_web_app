@@ -49,3 +49,13 @@ The jq utility https://stedolan.github.io/jq/ is used to format the response bod
 curl -s --location --request GET 'http://localhost:8080/recipes' \
 --header 'Content-Type: application/json'
 ```
+
+- The `|` symbol in the terminal commands mean pipe output from first command to input of the second command
+
+- To count the number of recipes returned by the request:
+
+```
+curl -s -X GET 'http://localhost:8080/recipes' | jq length
+```
+
+-
