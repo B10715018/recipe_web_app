@@ -17,14 +17,19 @@
 package main
 
 import (
-	"encoding/json"
-	"io/ioutil"
+	"context"
+	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/xid"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 type Recipe struct {
@@ -71,6 +76,19 @@ func NewRecipeHandler(c *gin.Context) {
 //     '200':
 //         description: Successful operation
 func ListRecipeHandler(c *gin.Context) {
+	cur, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	defer cur.Close(ctx)
+	recipes := make([]Recipe, 0)
+	for cur.Next(ctx) {
+		var recipe Recipe
+		cur.Decode(&recipe)
+		recipes = append(recipes, recipe)
+	}
 	c.JSON(http.StatusOK, recipes)
 }
 
@@ -190,12 +208,44 @@ func SearchRecipeHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, listOfRecipes)
 }
 
+var ctx context.Context
+var err error
+var client *mongo.Client
+var collection *mongo.Collection
+
 // populate mock data into inconsistent data
 func init() {
+	// recipes = make([]Recipe, 0)
+	// file, _ := ioutil.ReadFile("recipes.json")
+	// _ = json.Unmarshal([]byte(file), &recipes)
 	// make function is used to initialize object of type slice
-	recipes = make([]Recipe, 0)
-	file, _ := ioutil.ReadFile("recipes.json")
-	_ = json.Unmarshal([]byte(file), &recipes)
+	ctx = context.Background()
+	client, err = mongo.Connect(ctx,
+		options.Client().ApplyURI(os.Getenv("MONGO_URI")))
+	if err = client.Ping(context.TODO(),
+		readpref.Primary()); err != nil {
+		log.Fatal(err)
+	}
+	log.Println("Connected to MongoDB")
+
+	// var listOfRecipes []interface{}
+
+	// for _, recipe := range recipes {
+	// 	listOfRecipes = append(listOfRecipes, recipe)
+	// }
+
+	collection = client.Database(os.Getenv("MONGO_DATABASE")).
+		Collection("recipes")
+
+	// insertManyResult, err := collection.InsertMany(ctx,
+	// 	listOfRecipes)
+
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// log.Println("Inserted Recipes:",
+	// 	len(insertManyResult.InsertedIDs))
 }
 
 func main() {
