@@ -161,3 +161,5 @@ MONGO_URI="mongodb://admin:password@localhost:27017/test?authSource=admin" go ru
 ```
 mongoimport --username admin --password password --authenticationDatabase admin --db demo --collection recipes --file recipes.json --jsonArray
 ```
+
+- Don't forget to initialize the mongoDB collection and also the database to prevent from unwanted error !!
