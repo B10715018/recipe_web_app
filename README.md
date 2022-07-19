@@ -163,3 +163,9 @@ mongoimport --username admin --password password --authenticationDatabase admin 
 ```
 
 - Don't forget to initialize the mongoDB collection and also the database to prevent from unwanted error !!
+
+- Refactor Go Project Layout into handler folder, model folder and main file, to execute, as you can see it will run all the Go files:
+
+```
+MONGO_URI="mongodb://admin:password@localhost:27017/admin?authSource=admin" MONGO_DATABASE=demo go run *.go
+```
