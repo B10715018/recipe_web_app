@@ -169,3 +169,105 @@ mongoimport --username admin --password password --authenticationDatabase admin 
 ```
 MONGO_URI="mongodb://admin:password@localhost:27017/admin?authSource=admin" MONGO_DATABASE=demo go run *.go
 ```
+
+## Caching API with Redis
+
+- Need to use Redis as a caching layer to improve user experience by giving the data needed faster in term of speed performance
+
+- Easiest way to start Redis server with Docker container by:
+
+```
+docker run -d --name redis -p 6379:6379 redis:6.0
+```
+
+This command does the following two main things:
+
+The –d flag runs the Redis container as a daemon.
+The –p flag maps port 6379 of the container to port 6379 of the host. Port 6379 is the port where the Redis server is exposed.
+
+- In production we need to set eviction policy for the Redis, for example using Least Recently Used Algorithm (LRU) by writing this in `redis.conf` file:
+
+```
+maxmemory-policy allkeys-lru
+maxmemory 512mb
+```
+
+- We can pass the redis configuration file during the runtime of the container
+
+```
+docker run -d -v $PWD/conf:/usr/local/etc/redis --name redis -p 6379:6379 redis:6.0
+```
+
+Here, `$PWD/conf` is the folder containing the redis.conf file.
+
+- We can verify that data is being cached in Redis by running the Redis CLI from the container. Run the following commands:
+
+```
+docker ps
+docker exec –it CONTAINER_ID bash
+```
+
+- Now that we're attached to the Redis container, we can use the Redis command line:
+
+```
+redis-cli
+```
+
+- From there, we can use the EXISTS command to check if the recipes key exists:
+
+```
+EXISTS recipes
+```
+
+This command will return 1 (if the key exists) or 0 (if the key doesn't exist). In our case, the list of recipes has been cached in Redis:
+
+- For GUI fans, you can use Redis Insights (https://redislabs.com/fr/redis-enterprise/redis-insight/). It provides an intuitive interface to explore Redis and interact with its data. Similar to the Redis server, you can deploy Redis Insights with Docker:
+
+```
+docker run -d --name redisinsight --link redis -p 8001:8001 redislabs/redisinsight
+```
+
+- This command will run a container based on the Redis Insight official image and expose the interface on port 8001.
+
+- Navigate with your browser to http://localhost:8081. The Redis Insights home page should appear. Click on I already have a database and then on the Connect to Redis database button
+
+- Set the Host to redis, port to 6379, and name the database. The settings are as follows
+
+- Next, click on ADD REDIS DATABASE. The local database will be saved; click on it:
+
+- Some Problem when using caching system is there will be data inconsistency, how to fix is by setting TTL (Time To Live) and delete the recipes in the redis every time there is update or add recipe
+
+## Performance Benchmark
+
+- We can take this further and see how the API will behave under a huge volume of requests. We can simulate multiple requests with Apache Benchmark (https://httpd.apache.org/docs/2.4/programs/ab.html).
+
+- First, let's test the API without the caching layer. You can run 2,000 GET requests in total on the /recipes endpoint with 100 concurrent requests with the following command:
+
+```
+ab -n 2000 -c 100 -g without-cache.data http://localhost:8080/recipes
+```
+
+- Next, we will issue the same requests but this time on the API with caching (Redis):
+
+```
+ab -n 2000 -c 100 -g with-cache.data http://localhost:8080/recipes
+```
+
+- To compare both results, we can use the gnuplot utility to plot a chart based on the without-cache.data and with-cache.data files. But first, create an apache-benchmark.p file to render data into a graph:
+
+```
+set terminal png
+set output "benchmark.png"
+set title "Cache benchmark"
+set size 1,0.7
+set grid y
+set xlabel "request"
+set ylabel "response time (ms)"
+plot "with-cache.data" using 9 smooth sbezier with lines title "with cache", "without-cache.data" using 9 smooth sbezier with lines title "without cache"
+```
+
+- These commands will draw two plots on the same graph based on the .data files and save the output as a PNG image. Next, run the gnuplot command to create the image:
+
+```
+gnuplot apache-benchmark.p
+```
