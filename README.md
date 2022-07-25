@@ -271,3 +271,92 @@ plot "with-cache.data" using 9 smooth sbezier with lines title "with cache", "wi
 ```
 gnuplot apache-benchmark.p
 ```
+
+## Authentication
+
+### Authentication with API key
+
+- Run the application after running the MongoDB and Redis containers, but this time set the X-API-KEY environment variable as follows:
+
+```
+X_API_KEY=eUbP9shywUygMx7u  MONGO_URI="mongodb://admin:password@localhost:27017/test?authSource=admin" MONGO_DATABASE=demo go run *.go
+```
+
+- Set the API key in the Postman OR use cURL:
+
+```
+curl --location --request POST 'http://localhost:8080/recipes' \
+--header 'X-API-KEY: eUbP9shywUygMx7u' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+   "name": "Homemade Pizza",
+   "ingredients": ["..."],
+   "instructions": ["..."],
+   "tags": ["dinner", "fastfood"]
+}'
+```
+
+- Using API key only is vulnerable to the man in the middle attack and need to encrypt the data by using JWT that consist of 3 part: header, payload and signature
+
+- Header where we specify the algorithm for the signature, payload is where the data lives and the signature is the result of hashing header and payload parts with a secrets key
+
+- When the user is signed in, it will get JWT token that will be used for authorization whenever it try to made a request to API
+
+- To test our app with JWT execute:
+
+```
+JWT_SECRET=eUbP9shywUygMx7u MONGO_URI="mongodb://admin:password@localhost:27017/admin?authSource=admin" MONGO_DATABASE=demo go run *.go
+```
+
+- To decode the JWT token:
+  The token consists of three parts separated by a dot. You can decode the token by going to https://jwt.io/ to return the following output (your results might look different)
+
+## Populate the MongoDB with user
+
+- Create new project and `main.go` file like below:
+
+```
+package main
+
+import (
+	"context"
+	"crypto/sha256"
+	"log"
+	"os"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
+)
+
+func main() {
+	users := map[string]string{
+		"admin":      "fCRmh4Q2J7Rseqkz",
+		"packt":      "RE4zfHB35VPtTkbT",
+		"businessboy": "L3nSFRcZzNQ67bcc",
+	}
+
+	ctx := context.Background()
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(os.Getenv("MONGO_URI")))
+	if err = client.Ping(context.TODO(), readpref.Primary()); err != nil {
+		log.Fatal(err)
+	}
+
+	collection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("users")
+	h := sha256.New()
+
+	for username, password := range users {
+		collection.InsertOne(ctx, bson.M{
+			"username": username,
+			"password": string(h.Sum([]byte(password))),
+		})
+	}
+}
+```
+
+- and run this command:
+
+```
+MONGO_URI="mongodb://admin:password@localhost:27017/admin?authSource=admin" MONGO_DATABASE=demo go run main.go
+```

@@ -34,6 +34,7 @@ var err error
 var client *mongo.Client
 var collection *mongo.Collection
 var recipesHandler *handlers.RecipesHandler
+var authHandler *handlers.AuthHandler
 
 // populate mock data into inconsistent data
 func init() {
@@ -59,17 +60,27 @@ func init() {
 
 	recipesHandler = handlers.NewRecipesHandler(ctx, collection,
 		redisClient)
+
+	collectionUsers := client.Database(os.Getenv("MONGO_DATABASE")).
+		Collection("users")
+	authHandler = handlers.NewAuthHandler(ctx, collectionUsers)
 }
 
 func main() {
 	// initialize the router
 	router := gin.Default()
-
-	router.DELETE("recipes/:id", recipesHandler.DeleteRecipeHandler)
-	router.POST("/recipes", recipesHandler.NewRecipeHandler)
 	router.GET("/recipes", recipesHandler.ListRecipesHandler)
-	router.GET("/recipes/:id", recipesHandler.GetOneRecipeHandler)
-	router.PUT("/recipes/:id", recipesHandler.UpdateRecipeHandler)
+	router.POST("/signin", authHandler.SignInHandler)
+	router.POST("/refresh", authHandler.RefreshHandler)
+
+	authorized := router.Group("/")
+	authorized.Use(authHandler.AuthMiddleware())
+	{
+		authorized.DELETE("recipes/:id", recipesHandler.DeleteRecipeHandler)
+		authorized.POST("/recipes", recipesHandler.NewRecipeHandler)
+		authorized.GET("/recipes/:id", recipesHandler.GetOneRecipeHandler)
+		authorized.PUT("/recipes/:id", recipesHandler.UpdateRecipeHandler)
+	}
 	// run the web application, can specify port too here
 	router.Run()
 }
