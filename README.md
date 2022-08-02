@@ -321,6 +321,7 @@ package main
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/hex"
 	"log"
 	"os"
 
@@ -334,7 +335,7 @@ func main() {
 	users := map[string]string{
 		"admin":      "fCRmh4Q2J7Rseqkz",
 		"packt":      "RE4zfHB35VPtTkbT",
-		"businessboy": "L3nSFRcZzNQ67bcc",
+		"mlabouardy": "L3nSFRcZzNQ67bcc",
 	}
 
 	ctx := context.Background()
@@ -349,7 +350,7 @@ func main() {
 	for username, password := range users {
 		collection.InsertOne(ctx, bson.M{
 			"username": username,
-			"password": string(h.Sum([]byte(password))),
+			"password": hex.EncodeToString(h.Sum([]byte(password))),
 		})
 	}
 }
@@ -359,4 +360,24 @@ func main() {
 
 ```
 MONGO_URI="mongodb://admin:password@localhost:27017/admin?authSource=admin" MONGO_DATABASE=demo go run main.go
+```
+
+## Session Cookie (Using session cookie so no need to authenticate every time)
+
+- Install Gin middleware for session management with the following command:
+
+```
+go get github.com/gin-contrib/sessions
+```
+
+- Test session token without Postman Client: Use the following command to store the generated cookie in a text file:
+
+```
+curl -c cookies.txt -X POST http://localhost:8080/signin -d '{"username":"admin", "password":"fCRmh4Q2J7Rseqkz"}'
+```
+
+- Then, inject the cookies.txt file in future requests, like this:
+
+```
+curl -b cookies.txt -X POST http://localhost:8080/recipes -d '{"name":"Homemade Pizza", "steps":[], "instructions":[]}'
 ```

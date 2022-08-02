@@ -6,11 +6,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"recipe_api/models"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"go.mongodb.org/mongo-driver/bson"
@@ -26,19 +25,27 @@ type RecipesHandler struct {
 
 func (handler *AuthHandler) AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		tokenValue := c.GetHeader("Authorization")
-		claims := &Claims{}
-		tkn, err := jwt.ParseWithClaims(tokenValue, claims,
-			func(token *jwt.Token) (interface{}, error) {
-				return []byte(os.Getenv("JWT_SECRET")), nil
+		session := sessions.Default(c)
+		sessionToken := session.Get("token")
+		if sessionToken == nil {
+			c.JSON(http.StatusForbidden, gin.H{
+				"message": "Not Logged",
 			})
-		if err != nil {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.Abort()
 		}
+		// tokenValue := c.GetHeader("Authorization")
+		// claims := &Claims{}
+		// tkn, err := jwt.ParseWithClaims(tokenValue, claims,
+		// 	func(token *jwt.Token) (interface{}, error) {
+		// 		return []byte(os.Getenv("JWT_SECRET")), nil
+		// 	})
+		// if err != nil {
+		// 	c.AbortWithStatus(http.StatusUnauthorized)
+		// }
 
-		if tkn == nil || !tkn.Valid {
-			c.AbortWithStatus(http.StatusUnauthorized)
-		}
+		// if tkn == nil || !tkn.Valid {
+		// 	c.AbortWithStatus(http.StatusUnauthorized)
+		// }
 		c.Next()
 	}
 }
