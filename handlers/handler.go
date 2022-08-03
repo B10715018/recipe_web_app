@@ -6,15 +6,17 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"recipe_api/models"
 	"time"
 
-	"github.com/gin-contrib/sessions"
+	"github.com/auth0-community/go-auth0"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"gopkg.in/square/go-jose.v2"
 )
 
 type RecipesHandler struct {
@@ -25,14 +27,29 @@ type RecipesHandler struct {
 
 func (handler *AuthHandler) AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		session := sessions.Default(c)
-		sessionToken := session.Get("token")
-		if sessionToken == nil {
-			c.JSON(http.StatusForbidden, gin.H{
-				"message": "Not Logged",
-			})
+		var auth0Domain = "https://" + os.Getenv("AUTH0_DOMAIN") + "/"
+		client := auth0.NewJWKClient(auth0.JWKClientOptions{URI: auth0Domain + ".well-known/jwks.json"}, nil)
+		configuration := auth0.NewConfiguration(client, []string{os.Getenv("AUTH0_API_IDENTIFIER")}, auth0Domain, jose.RS256)
+		validator := auth0.NewValidator(configuration, nil)
+
+		_, err := validator.ValidateRequest(c.Request)
+
+		log.Println(err)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid token"})
 			c.Abort()
+			return
 		}
+		c.Next()
+		// session := sessions.Default(c)
+		// sessionToken := session.Get("token")
+		// if sessionToken == nil {
+		// 	c.JSON(http.StatusForbidden, gin.H{
+		// 		"message": "Not Logged",
+		// 	})
+		// 	c.Abort()
+		// }
+
 		// tokenValue := c.GetHeader("Authorization")
 		// claims := &Claims{}
 		// tkn, err := jwt.ParseWithClaims(tokenValue, claims,
@@ -46,7 +63,6 @@ func (handler *AuthHandler) AuthMiddleware() gin.HandlerFunc {
 		// if tkn == nil || !tkn.Valid {
 		// 	c.AbortWithStatus(http.StatusUnauthorized)
 		// }
-		c.Next()
 	}
 }
 func NewRecipesHandler(ctx context.Context,

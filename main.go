@@ -3,10 +3,15 @@
 // This is a sample recipes API. You can find out more about the API at https://github.com/PacktPublishing/Building-Distributed-Applications-in-Gin.
 //
 //  Schemes: http
-//  Host: localhost:8080
+//  Host: localhost
 //  BasePath: /
 //  Version: 1.0.0
 //  Contact: Brandon<brandon.wymer@rocketmail.com>
+//  SecurityDefinitions:
+//  api_key:
+//    type:  apiKey
+//    name:  Authorization
+//    in:  header
 //
 //  Consumes:
 //  - application/json
@@ -89,5 +94,5 @@ func main() {
 		authorized.PUT("/recipes/:id", recipesHandler.UpdateRecipeHandler)
 	}
 	// run the web application, can specify port too here
-	router.Run()
+	router.RunTLS(":443", "certs/localhost.crt", "certs/localhost.key")
 }

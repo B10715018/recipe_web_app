@@ -381,3 +381,66 @@ curl -c cookies.txt -X POST http://localhost:8080/signin -d '{"username":"admin"
 ```
 curl -b cookies.txt -X POST http://localhost:8080/recipes -d '{"name":"Homemade Pizza", "steps":[], "instructions":[]}'
 ```
+
+## Using AuthO an authentication managed service
+
+- Once the API is created, you need to integrate the Auth0 service into the API. Download the following Go packages:
+
+```
+go get -v gopkg.in/square/go-jose.v2
+go get -v github.com/auth0-community/go-auth0
+```
+
+- Auth0 uses RS256 algorithm-signing access tokens. The verification process uses a public key (located at AUTH0_DOMAIN/.well-known/jwks.json) in JSON Web Key Set (JWKS) format to verify the given token.Run the application with AUTH0_DOMAIN and AUTH0_API_IDENTIFIER, as illustrated in the following code snippet. Make sure to replace those variables with the values you copied from your Auth0 dashboard:
+
+```
+AUTH0_DOMAIN={YOUR_DOMAIN}.{SELECTED_REGION}.auth0.com AUTH0_API_IDENTIFIER="https://api.recipes.io" MONGO_URI="mongodb://admin:password@localhost:27017/admin?authSource=admin" MONGO_DATABASE=demo go run *.go
+```
+
+- To use cURL:This can also be tested straight from the command line with cURL. Just replace the ACCESS_TOKEN value shown in the following code snippet with your test token and then paste it into your terminal:
+
+```
+curl --request POST \
+  --url http://localhost:8080/recipes \
+  --header 'Authorization: Bearer {YOUR_ACCESS_TOKEN}'\
+  --data '{"name":"Pizza "}'
+```
+
+## Building HTTPS server
+
+- Use the ngrok solution to serve our local web API with a public Uniform Resource Locator (URL) that supports both HTTP and HTTPS.(Ngrok for HTTP Tunneling)
+
+- Configure Ngrok to listen and forward requests into port 8080, which is the port where the RESTful API is exposed, by running the following command:
+
+```
+ngrok http 8080
+```
+
+# Self signed certificates
+
+- SSL certificates are what websites use to move from HTTP and HTTPS. The certificate uses SSL/Transport Layer Security (TLS) encryption to keep user data secure, verify ownership of the website, prevent attackers from creating a fake version of the site, and gain user trust.
+
+- Create a directory where the certificates will be stored and use the OpenSSL command line to generate public and private keys, as follows:
+
+```
+mkdir certs
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout certs/localhost.key -out certs/localhost.crt
+```
+
+- You can fix the preceding error by specifying a certificate bundle on the command-line interface (CLI) with the following command:
+
+```
+curl --cacert certs/localhost.crt https://localhost/recipes
+```
+
+- Or, you can use a –k flag to skip the SSL verification, as follows (not recommended if interacting with external websites):
+
+```
+curl -k https://localhost/recipes
+```
+
+- For development, simply keep using the localhost, or access the API from a custom domain. You can create an alias with a domain name locally by adding the following entry to your /etc/hosts file:
+
+```
+127.0.0.1 api.recipes.io
+```

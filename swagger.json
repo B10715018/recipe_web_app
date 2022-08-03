@@ -18,7 +18,7 @@
     },
     "version": "1.0.0"
   },
-  "host": "localhost:8080",
+  "host": "localhost",
   "basePath": "/",
   "paths": {
     "/recipes": {
@@ -46,6 +46,48 @@
           "recipes"
         ],
         "operationId": "newRecipe",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "name",
+            "in": "query"
+          },
+          {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "x-go-name": "Tags",
+            "name": "tags",
+            "in": "query"
+          },
+          {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "x-go-name": "Ingredients",
+            "name": "ingredients",
+            "in": "query"
+          },
+          {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "x-go-name": "Instructions",
+            "name": "instructions",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "format": "date-time",
+            "x-go-name": "PublishedAt",
+            "name": "publishedAt",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful operation"
@@ -56,22 +98,20 @@
         }
       }
     },
-    "/recipes/search": {
+    "/recipes/{id}": {
       "get": {
-        "description": "Search recipes based on tags",
+        "description": "Get one recipe",
         "produces": [
           "application/json"
         ],
-        "tags": [
-          "recipes"
-        ],
-        "operationId": "findRecipe",
+        "operationId": "recipes",
         "parameters": [
           {
             "type": "string",
-            "description": "recipe tag",
-            "name": "tag",
-            "in": "query",
+            "x-go-name": "Name",
+            "description": "recipe ID",
+            "name": "id",
+            "in": "path",
             "required": true
           }
         ],
@@ -80,9 +120,7 @@
             "description": "Successful operation"
           }
         }
-      }
-    },
-    "/recipes/{id}": {
+      },
       "put": {
         "description": "Update an existing recipe",
         "produces": [
@@ -140,6 +178,56 @@
           }
         }
       }
+    },
+    "/refresh": {
+      "post": {
+        "description": "Get new token in exchange for an old one",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "auth"
+        ],
+        "operationId": "refresh",
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          },
+          "400": {
+            "description": "Token is new and doesn't need a refresh"
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        }
+      }
+    },
+    "/signin": {
+      "post": {
+        "description": "Login with username and password",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "auth"
+        ],
+        "operationId": "signIn",
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "api_key": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
     }
   }
 }
